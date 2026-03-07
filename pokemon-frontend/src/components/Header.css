@@ -1,0 +1,39 @@
+*{
+    margin: 0;
+    padding: 0;
+    text-decoration: none;
+}
+
+.header{
+  background-color: #ef5350;
+  width: 100%;
+  height: 70px;
+  padding-left: 100px;
+  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navegacao{
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding-right: 100px;
+}
+
+.buttonSalvos{  
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  border: 1px solid white;
+  padding: 10px 12px;
+  font-size: 1em;
+  font-weight: 500;
+  background-color: #2959b5;
+  cursor: pointer;
+  transition: border-color 0.25s;
+  flex-wrap: wrap;
+}
