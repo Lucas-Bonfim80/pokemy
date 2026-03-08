@@ -28,7 +28,7 @@
   justify-content: center;
   align-items: center;
   border-radius: 10px;
-  border: 1px solid white;
+  border: 1px solid rgb(197, 197, 197);
   padding: 10px 12px;
   font-size: 1em;
   font-weight: 500;
@@ -36,4 +36,9 @@
   cursor: pointer;
   transition: border-color 0.25s;
   flex-wrap: wrap;
+  color: white;
+}
+
+.buttonSalvos:hover {
+  background-color: #2752a1;
 }

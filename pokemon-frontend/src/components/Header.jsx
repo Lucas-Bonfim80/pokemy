@@ -14,6 +14,10 @@ function Header() {
         <Link to="/">
           <button className="buttonSalvos">Buscar Pokemon</button>
         </Link>
+
+        <Link to="/todos">
+          <button className="buttonSalvos">Buscar todos Pokemon</button>
+        </Link>
       </div>
 
     </header>

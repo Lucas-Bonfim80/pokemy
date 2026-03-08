@@ -2,7 +2,8 @@ from fastapi import FastAPI
 import requests
 from fastapi.middleware.cors import CORSMiddleware
 from schemas import Pokemon
-
+import httpx
+import asyncio
 from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -20,32 +21,12 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # quem pode acessar
+    allow_origins=["*"],  # quem pode acessar
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/pokemon/{nome}")
-async def pegar_pokemon(nome: str):
-    url = f"https://pokeapi.co/api/v2/pokemon/{nome}"
-    
-    response = await requests.get(url)
-    
-    if response.status_code != 200:
-        return {"erro": "Pokémon não encontrado"}
-    
-    data = response.json()
-    
-    return {
-        "imagem": data["sprites"]["front_default"],
-        "imagem_costas": data["sprites"]["back_default"],
-        "nome": data["name"],
-        "altura": data["height"],
-        "peso": data["weight"],
-        "tipos": [tipo["type"]["name"] for tipo in data["types"]]
-    }
-    
 @app.post("/pokemon/buscar-e-salvar/{nome}")
 def buscar_e_salvar_pokemon(nome: str):
 
@@ -65,6 +46,7 @@ def buscar_e_salvar_pokemon(nome: str):
         "altura": data["height"],
         "tipos": [t["type"]["name"] for t in data["types"]]
     }
+    
 
     db = SessionLocal()
 
@@ -95,3 +77,53 @@ def listar_pokemons():
     db = SessionLocal()
     pokemons = db.query(Pokemon).all()
     return pokemons
+
+@app.delete("/pokemon/{nome}")
+def deletar_pokemon(nome: str):
+
+    db = SessionLocal()
+
+    pokemon = db.query(Pokemon).filter(Pokemon.nome == nome).first()
+
+    if not pokemon:
+        db.close()
+        return {"erro": "Pokemon não encontrado"}
+
+    db.delete(pokemon)
+    db.commit()
+    db.close()
+
+    return {"mensagem": f"{nome} deletado com sucesso"}
+
+
+@app.get("/pokemon/buscar-todos")
+async def buscar_todos_pokemons():
+
+    async with httpx.AsyncClient() as client:
+
+        lista = await client.get("https://pokeapi.co/api/v2/pokemon?limit=151")
+        data = lista.json()
+
+        urls = [p["url"] for p in data["results"]]
+
+        async def pegar_detalhe(url):
+            r = await client.get(url)
+            detalhe = r.json()
+
+            return {
+                "nome": detalhe["name"],
+                "imagem": detalhe["sprites"]["front_default"],
+                "imagem_costas": detalhe["sprites"]["back_default"],
+                "tamanho": detalhe["weight"],
+                "altura": detalhe["height"],
+                "tipos": [t["type"]["name"] for t in detalhe["types"]]
+            }
+
+        tarefas = [pegar_detalhe(url) for url in urls]
+
+        pokemons = await asyncio.gather(*tarefas)
+
+        return {
+            "total": len(pokemons),
+            "pokemons": pokemons
+        }
