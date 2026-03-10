@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 import requests
 from fastapi.middleware.cors import CORSMiddleware
-from schemas import Pokemon
 import httpx
 import asyncio
+from schemas import Pokemon
+
 from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -15,13 +16,11 @@ Base = declarative_base()
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:5173",
-]
+Base.metadata.create_all(engine)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # quem pode acessar
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,61 +38,77 @@ def buscar_e_salvar_pokemon(nome: str):
     data = response.json()
 
     pokemon_data = {
+        "id": data["id"],
         "nome": data["name"],
         "imagem": data["sprites"]["front_default"],
         "imagem_costas": data["sprites"]["back_default"],
-        "tamanho": data["weight"],
+        "imagem_shiny": data["sprites"]["front_shiny"],
         "altura": data["height"],
-        "tipos": [t["type"]["name"] for t in data["types"]]
+        "peso": data["weight"],
+        "base_experience": data["base_experience"],
+        "tipos": [t["type"]["name"] for t in data["types"]],
+        "habilidades": data["abilities"],
+        "stats": data["stats"],
+        "som": data["cries"]["latest"] if "cries" in data else None
     }
-    
 
     db = SessionLocal()
 
-    pokemon_existente = db.query(Pokemon).filter(Pokemon.nome == pokemon_data["nome"]).first()
+    try:
+        pokemon_existente = db.query(Pokemon).filter(Pokemon.nome == pokemon_data["nome"]).first()
 
-    if pokemon_existente:
-        db.close()
+        if pokemon_existente:
+            return {
+                "mensagem": "Pokemon já estava salvo",
+                "pokemon": pokemon_data
+            }
+
+        novo = Pokemon(**pokemon_data)
+
+        db.add(novo)
+        db.commit()
+        db.refresh(novo)
+
         return {
-            "mensagem": "Pokemon já estava salvo",
+            "mensagem": "Pokemon salvo com sucesso",
             "pokemon": pokemon_data
         }
 
-    novo = Pokemon(**pokemon_data)
+    finally:
+        db.close()
 
-    db.add(novo)
-    db.commit()
-    db.refresh(novo)
-
-    db.close()
-
-    return {
-        "mensagem": "Pokemon salvo com sucesso",
-        "pokemon": pokemon_data
-    }
 
 @app.get("/pokemons")
 def listar_pokemons():
+
     db = SessionLocal()
-    pokemons = db.query(Pokemon).all()
-    return pokemons
+
+    try:
+        pokemons = db.query(Pokemon).all()
+        return pokemons
+
+    finally:
+        db.close()
+
 
 @app.delete("/pokemon/{nome}")
 def deletar_pokemon(nome: str):
 
     db = SessionLocal()
 
-    pokemon = db.query(Pokemon).filter(Pokemon.nome == nome).first()
+    try:
+        pokemon = db.query(Pokemon).filter(Pokemon.nome == nome).first()
 
-    if not pokemon:
+        if not pokemon:
+            return {"erro": "Pokemon não encontrado"}
+
+        db.delete(pokemon)
+        db.commit()
+
+        return {"mensagem": f"{nome} deletado com sucesso"}
+
+    finally:
         db.close()
-        return {"erro": "Pokemon não encontrado"}
-
-    db.delete(pokemon)
-    db.commit()
-    db.close()
-
-    return {"mensagem": f"{nome} deletado com sucesso"}
 
 
 @app.get("/pokemon/buscar-todos")
@@ -107,6 +122,7 @@ async def buscar_todos_pokemons():
         urls = [p["url"] for p in data["results"]]
 
         async def pegar_detalhe(url):
+
             r = await client.get(url)
             detalhe = r.json()
 
@@ -114,7 +130,7 @@ async def buscar_todos_pokemons():
                 "nome": detalhe["name"],
                 "imagem": detalhe["sprites"]["front_default"],
                 "imagem_costas": detalhe["sprites"]["back_default"],
-                "tamanho": detalhe["weight"],
+                "peso": detalhe["weight"],
                 "altura": detalhe["height"],
                 "tipos": [t["type"]["name"] for t in detalhe["types"]]
             }
