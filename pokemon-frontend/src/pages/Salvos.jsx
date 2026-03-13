@@ -66,13 +66,13 @@ function Salvos() {
                 <img src={p.imagem} alt={p.nome} className="imagem" />
                 <img src={p.imagem_costas} alt={p.nome} className="imagem" />
               </div>
-
-              <img
-                src={Lixo}
-                className="lixeira"
-                onClick={() => deletarPokemon(p.nome)}
-                alt="Deletar pokemon"
-              />
+              <div>
+                <h2
+                  onClick={() => deletarPokemon(p.nome)}
+                >
+                  Delete
+                </h2>
+              </div>
             </div>
           );
         })}

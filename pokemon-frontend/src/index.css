@@ -85,8 +85,9 @@ h1 {
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
-  cursor: pointer;
   text-transform: capitalize;
+  
+  cursor: pointer;
 }
 
 .pokemonData:hover {
@@ -112,10 +113,11 @@ h1 {
   image-rendering: pixelated;
 }
 
-.lixeira {
-  margin-top: 20px;
-  width: 20%;
-  border-radius: 10px;
+.deleteTitle {
+  display: inline-block;
+  text-align: center;
+  margin: 0 auto;
+  width: fit-content;
 }
 
 .pokemonData {

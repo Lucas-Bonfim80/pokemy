@@ -77,8 +77,6 @@ function Home() {
 
             {/* STATUS */}
             <div className="altTam">
-              <h3>Status</h3>
-
               {data.stats?.map((s) => (
                 <p key={s.stat.name}>
                   {s.stat.name}: {s.base_stat}
